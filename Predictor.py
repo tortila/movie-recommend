@@ -1,16 +1,37 @@
 import numpy as np
 
+TRAINING_FRACTION = 0.05
+
 class Predictor:
 
     def __init__(self, parsed_data, users, movies):
-        self.matrix = np.zeros((users, movies))
-        self.construct_r(parsed_data)
-        self.r_avg = self.get_global_avg()
-        print self.r_avg
+        self.r_avg = 0
+        self.ratings_number = np.count_nonzero(parsed_data)
+        print "ratings:", self.ratings_number
+        self.training_points = int(self.ratings_number * TRAINING_FRACTION)
+        print "training:", self.training_points
+        self.matrix_A = self.construct_A(parsed_data, users, movies)
+        print "A:", self.matrix_A.shape
 
-    def construct_r(self, raw_data):
-        for row in raw_data:
-            self.matrix[row[0] - 1, row[1] - 1] = row[2]
 
-    def get_global_avg(self):
-        return sum(i for row in self.matrix for i in row if i) * 1.0 / np.count_nonzero(self.matrix)
+    # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
+    def construct_A(self, matrix_R, users, movies):
+
+        # select training set of matrix R
+        training_indices = np.transpose(np.nonzero(matrix_R))
+        np.random.shuffle(training_indices)
+        training_indices = training_indices[:self.training_points]
+
+        # calculate average rating of training set
+        sum = 0
+        for row in training_indices:
+            sum += matrix_R[row[0], row[1]]
+        self.r_avg = sum * 1.0 / self.training_points
+
+        # construct the matrix A
+        A = np.zeros((self.training_points, users + movies))
+        i = 0
+        for row in training_indices:
+            A[i, row[0]] = 1
+            A[i, row[0] + row[1]] = 1
+        return A

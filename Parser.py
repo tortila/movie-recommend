@@ -13,8 +13,8 @@ class Parser:
         self.movies_number = 0
         self.movies_file = DIR + mode + "." + MOVIE_NAMES
         self.data_file = DIR + mode + "." + DATA
-        self.umr = self.data_parse(self.data_file)
         self.titles = self.moviename_parse(self.movies_file)
+        self.umr = self.get_umr(self.data_parse(self.data_file))
         print "Parser ready!"
         print self.users_number, "users and", self.movies_number, "movies."
 
@@ -26,7 +26,14 @@ class Parser:
             for row in f_reader:
                 data.append([int(row[0]), int(row[1]), int(row[2])])
         self.users_number = max(map(lambda x: x[0], data))
+        csv_file.close()
         return data
+
+    def get_umr(self, raw_data):
+        matrix = np.zeros((self.users_number, self.movies_number))
+        for row in raw_data:
+            matrix[row[0] - 1, row[1] - 1] = row[2]
+        return matrix
 
     # for *.moviename files (m, title)
     def moviename_parse(self, filename):
@@ -36,4 +43,5 @@ class Parser:
             for row in f_reader:
                 data.append(row[1])
                 self.movies_number += 1
+        csv_file.close()
         return data
