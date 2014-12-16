@@ -11,8 +11,6 @@ class Predictor:
         self.training_points = int(self.ratings_number * TRAINING_FRACTION)
         print "training:", self.training_points
         self.matrix_A = self.construct_A(parsed_data, users, movies)
-        print "A:", self.matrix_A.shape
-
 
     # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
     def construct_A(self, matrix_R, users, movies):
@@ -27,11 +25,13 @@ class Predictor:
         for row in training_indices:
             sum += matrix_R[row[0], row[1]]
         self.r_avg = sum * 1.0 / self.training_points
+        print "avg:", self.r_avg
 
         # construct the matrix A
         A = np.zeros((self.training_points, users + movies))
         i = 0
         for row in training_indices:
-            A[i, row[0]] = 1
-            A[i, row[0] + row[1]] = 1
+            A[i, int(row[0])] = 1
+            A[i, int(row[1]) + users] = 1
+            i += 1
         return A
