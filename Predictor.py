@@ -13,7 +13,6 @@ class Predictor:
         print "training size:", self.training_size
         self.training_indices = np.transpose(np.nonzero(parsed_data))
         self.matrix_A, self.vector_y = self.construct_A(parsed_data, users, movies)
-        print "A.shape:", self.matrix_A.shape, "y.shape:", self.vector_y.shape
         self.bias = self.get_bias(self.matrix_A, self.vector_y)[0]
         print "bias:", self.bias.T, "with size:", len(self.bias.T)
         print "zeros:", sum(1 for i in self.bias if i == 0), "max:", max(self.bias), "min:", min(self.bias)
@@ -44,7 +43,7 @@ class Predictor:
             r[i] = matrix_R[row[0], row[1]] - self.r_avg
             i += 1
         print "5 elems of y:", r[:5]
-        return A, r.T
+        return A, r
 
     def get_bias(self, A, y):
         return np.linalg.lstsq(A, y)
