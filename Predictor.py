@@ -70,14 +70,16 @@ class Predictor:
         training_sum = 0.0
         test_sum = 0.0
         test_entries = len(test_set)
-        print "test points:", test_entries
+        users = training_set.shape[0]
+        movies = training_set.shape[1]
         # compute rmse for training set
-        for coord in self.training_indices:
-            training_sum += (self.basiline_matrix[coord[0], coord[1]] - training_set[coord[0], coord[1]]) ** 2
+        for user in range(users):
+            for movie in range(movies):
+                if training_set[user, movie] != 0:
+                    training_sum += (self.basiline_matrix[user, movie] - training_set[user, movie]) ** 2
         training = m.sqrt(1.0 / self.ratings_number * training_sum)
         # compute rmse for test set
         for rating in test_set:
             test_sum += (self.basiline_matrix[rating[0] - 1, rating[1] - 1] - rating[2]) ** 2
-        print "test_sum:", test_sum
         test = m.sqrt(1.0 / test_entries * test_sum)
         return training, test
