@@ -13,18 +13,18 @@ class Predictor:
         movies = training_data.shape[1]
         self.r_avg = 0
         self.ratings_number = np.count_nonzero(training_data)
-        print "ratings:", self.ratings_number
+        print "\tratings:", self.ratings_number
         self.training_size = self.get_training_size()
-        print "training size:", self.training_size
+        print "\ttraining size:", self.training_size
         self.training_indices = np.transpose(np.nonzero(training_data))
         self.matrix_A, self.vector_y = self.construct_A(training_data, users, movies)
         print "\tavg:", self.r_avg
         self.bias = self.get_bias(self.matrix_A, self.vector_y)[0]
-        print "\tBIAS:\tzeros:", sum(1 for i in self.bias if i == 0), "\tmax:", max(self.bias), "\tmin:", min(self.bias)
-        self.basiline_matrix = self.get_baseline_matrix(training_data)
-        self.rmse_training, self.rmse_test = self.get_rmse(training_data, test_data)
-        print "\trmse:\n\t\ton training set:", self.rmse_training, "\n\t\ton test set:", self.rmse_test
-        self.calculate_absolute_errors(BASELINE, test_data)
+        self.baseline_matrix = self.get_baseline_matrix(training_data)
+        self.rmse_training = self.get_rmse_training(training_data)
+        self.rmse_test = self.get_rmse_test(test_data, BASELINE)
+        print "\tBASELINE rmse:\n\t\ton training set:", self.rmse_training, "\n\t\ton test set:", self.rmse_test
+        self.baseline_error_dist = self.calculate_absolute_errors(BASELINE, test_data)
 
     # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
     def construct_A(self, matrix_R, users, movies):
@@ -67,28 +67,32 @@ class Predictor:
                     r_sum = 5.0
                 r_baseline[user, movie] = r_sum
         # round to the nearest integer
-        return np.rint(r_baseline)
+        return r_baseline
 
-    def get_rmse(self, training_set, test_set):
+    def get_rmse_training(self, training_set):
         training_sum = 0.0
-        test_sum = 0.0
-        test_entries = len(test_set)
         users = training_set.shape[0]
         movies = training_set.shape[1]
-        # compute rmse for training set
         for user in range(users):
             for movie in range(movies):
                 if training_set[user, movie] != 0:
-                    training_sum += (self.basiline_matrix[user, movie] - training_set[user, movie]) ** 2
+                    training_sum += (np.rint(self.baseline_matrix[user, movie]) - training_set[user, movie]) ** 2
         training = m.sqrt(1.0 / self.ratings_number * training_sum)
-        # compute rmse for test set
+        return np.around(training, decimals = 3)
+
+    def get_rmse_test(self, test_set, mode):
+        test_sum = 0.0
+        source = self.baseline_matrix
+        if mode == IMPROVED:
+            pass
+            # source = improved predictor's matrix
         for rating in test_set:
-            test_sum += (self.basiline_matrix[rating[0] - 1, rating[1] - 1] - rating[2]) ** 2
-        test = m.sqrt(1.0 / test_entries * test_sum)
-        return np.around(training, decimals = 3), np.around(test, decimals = 3)
+            test_sum += (np.rint(source[rating[0] - 1, rating[1] - 1]) - rating[2]) ** 2
+        test = m.sqrt(1.0 / len(test_set) * test_sum)
+        return np.around(test, decimals = 3)
 
     def calculate_absolute_errors(self, mode, test_set):
-        source = self.basiline_matrix
+        source = self.baseline_matrix
         filename = "abs_errors_" + mode + ".png"
         if mode == IMPROVED:
             pass
