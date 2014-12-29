@@ -15,22 +15,25 @@ class Predictor:
         elif self.mode == IMPROVED:
             self.init_improved(training_data, test_data)
 
+    @staticmethod
     def init_baseline(self, training_data, test_data):
         self.r_avg = 0.0
         self.ratings_number = np.count_nonzero(training_data)
         self.training_size = self.get_training_size()
         self.training_indices = np.transpose(np.nonzero(training_data))
-        self.matrix_A, self.vector_y = self.construct_A(training_data, training_data.shape[0], training_data.shape[1])
+        self.matrix_A, self.vector_y = self.construct_a_matrix(training_data, training_data.shape[0], training_data.shape[1])
         self.bias = self.get_bias(self.matrix_A, self.vector_y)[0]
         self.baseline_matrix = self.get_baseline_matrix(training_data)
         self.rmse_training = self.get_rmse_training(training_data)
         self.rmse_test = self.get_rmse_test(test_data)
 
+    @staticmethod
     def init_improved(self, training_data, test_data):
         self.init_baseline(training_data, test_data)
 
     # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
-    def construct_A(self, matrix_R, users, movies):
+    @staticmethod
+    def construct_a_matrix(self, matrix_R, users, movies):
         # select training set of matrix R
         np.random.shuffle(self.training_indices)
         self.training_indices = self.training_indices[:self.training_size]
@@ -50,13 +53,16 @@ class Predictor:
             i += 1
         return A, r
 
+    @staticmethod
     def get_bias(self, A, y):
         # rcond to avoid numerical errors
         return np.linalg.lstsq(A, y, rcond=1e-3)
-    
+
+    @staticmethod
     def get_training_size(self):
         return int(self.ratings_number * TRAINING_FRACTION)
 
+    @staticmethod
     def get_baseline_matrix(self, umr):
         users = umr.shape[0]
         movies = umr.shape[1]
@@ -72,6 +78,7 @@ class Predictor:
         # round to the nearest integer
         return r_baseline
 
+    @staticmethod
     def get_rmse_training(self, training_set):
         training_sum = 0.0
         users = training_set.shape[0]
@@ -83,6 +90,7 @@ class Predictor:
         training = m.sqrt(1.0 / self.ratings_number * training_sum)
         return np.around(training, decimals = 3)
 
+    @staticmethod
     def get_rmse_test(self, test_set):
         test_sum = 0.0
         source = self.baseline_matrix
