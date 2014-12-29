@@ -9,23 +9,25 @@ BASELINE = "baseline"
 class Predictor:
 
     def __init__(self, mode, training_data, test_data):
-        users = training_data.shape[0]
-        movies = training_data.shape[1]
         self.mode = mode
-        self.r_avg = 0
+        if self.mode == BASELINE:
+            self.init_baseline(training_data, test_data)
+        elif self.mode == IMPROVED:
+            self.init_improved(training_data, test_data)
+
+    def init_baseline(self, training_data, test_data):
+        self.r_avg = 0.0
         self.ratings_number = np.count_nonzero(training_data)
-        print "\tratings:", self.ratings_number
         self.training_size = self.get_training_size()
-        print "\ttraining size:", self.training_size
         self.training_indices = np.transpose(np.nonzero(training_data))
-        self.matrix_A, self.vector_y = self.construct_A(training_data, users, movies)
-        print "\tavg:", self.r_avg
+        self.matrix_A, self.vector_y = self.construct_A(training_data, training_data.shape[0], training_data.shape[1])
         self.bias = self.get_bias(self.matrix_A, self.vector_y)[0]
         self.baseline_matrix = self.get_baseline_matrix(training_data)
         self.rmse_training = self.get_rmse_training(training_data)
         self.rmse_test = self.get_rmse_test(test_data)
-        print "\trmse:\n\t\ton training set:", self.rmse_training, "\n\t\ton test set:", self.rmse_test
-        self.baseline_error_dist = self.calculate_absolute_errors(test_data)
+
+    def init_improved(self, training_data, test_data):
+        self.init_baseline(training_data, test_data)
 
     # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
     def construct_A(self, matrix_R, users, movies):
@@ -92,6 +94,7 @@ class Predictor:
         test = m.sqrt(1.0 / len(test_set) * test_sum)
         return np.around(test, decimals = 3)
 
+    # to be called from main program
     def calculate_absolute_errors(self, test_set):
         source = self.baseline_matrix
         filename = "abs_errors_" + self.mode + ".png"
