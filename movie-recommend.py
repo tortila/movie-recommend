@@ -12,7 +12,7 @@ def main():
     np.set_printoptions(formatter={'float_kind':'{:25f}'.format})
     # baseline predictor by default
     mode = BASELINE
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         if sys.argv[1] == IMPROVED or sys.argv[1] == BASELINE:
             mode = sys.argv[1]
             print "\tYou chose", mode, "predictor!"
