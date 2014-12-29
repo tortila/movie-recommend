@@ -10,6 +10,8 @@ def main():
     print "-- Welcome to movie-recommend! --"
     # for output readability
     np.set_printoptions(formatter={'float_kind':'{:25f}'.format})
+    # for ignoring invalid float operations
+    # np.seterr(invalid="ignore")
     # baseline predictor by default
     mode = BASELINE
     if len(sys.argv) > 1:
@@ -22,12 +24,15 @@ def main():
         print "\tYou did not provide any arguments. Default:", mode, "predictor!"
     # read and parse text files
     parser = Parser(mode)
+    print "Parser initialized:", len(parser.test_set), "of test points and", np.count_nonzero(parser.training_matrix), "training points"
     # initialize predictor and calculate rmse
     predictor = Predictor(mode, parser.training_matrix, parser.test_set)
+    print "\trmse on test data (baseline):", predictor.rmse_test
     if predictor.mode == BASELINE:
-        print "\trmse on training data:", predictor.rmse_training
-    print "\trmse on test data:", predictor.rmse_test
-    error_dist = predictor.calculate_absolute_errors(parser.test_set)
+        print "\trmse on training data (baseline):", predictor.rmse_training
+    else:
+        print "\trmse on test data (improved):", predictor.rmse_test_improved
+    error_dist = predictor.calculate_absolute_errors(parser.test_set, predictor.improved_matrix) if predictor.mode == IMPROVED else predictor.calculate_absolute_errors(parser.test_set, predictor.baseline_matrix)
     print "\tHistogram saved to file. Error distribution:", error_dist
 
 if __name__ == "__main__":
