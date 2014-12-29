@@ -5,15 +5,18 @@ DIR = "data/"
 DATA = "data"
 MOVIE_NAMES = "moviename"
 TEST = "test"
+BASELINE = "oligo854"
+IMPROVED = "improved"
 
 class Parser:
 
     def __init__(self, mode):
         self.users_number = 0
         self.movies_number = 0
-        self.movies_file = DIR + mode + "." + MOVIE_NAMES
-        self.data_file = DIR + mode + "." + DATA
-        self.test_file = DIR + mode + "." + TEST
+        file_mode = IMPROVED if mode == IMPROVED else BASELINE
+        self.movies_file = DIR + file_mode + "." + MOVIE_NAMES
+        self.data_file = DIR + file_mode + "." + DATA
+        self.test_file = DIR + file_mode + "." + TEST
         self.titles = self.moviename_parse(self.movies_file)
         self.training_matrix = self.get_umr_matrix(self.data_parse(self.data_file))
         self.test_set = self.data_parse(self.test_file)

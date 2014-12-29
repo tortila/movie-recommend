@@ -8,9 +8,10 @@ BASELINE = "baseline"
 
 class Predictor:
 
-    def __init__(self, training_data, test_data):
+    def __init__(self, mode, training_data, test_data):
         users = training_data.shape[0]
         movies = training_data.shape[1]
+        self.mode = mode
         self.r_avg = 0
         self.ratings_number = np.count_nonzero(training_data)
         print "\tratings:", self.ratings_number
@@ -22,9 +23,9 @@ class Predictor:
         self.bias = self.get_bias(self.matrix_A, self.vector_y)[0]
         self.baseline_matrix = self.get_baseline_matrix(training_data)
         self.rmse_training = self.get_rmse_training(training_data)
-        self.rmse_test = self.get_rmse_test(test_data, BASELINE)
-        print "\tBASELINE rmse:\n\t\ton training set:", self.rmse_training, "\n\t\ton test set:", self.rmse_test
-        self.baseline_error_dist = self.calculate_absolute_errors(BASELINE, test_data)
+        self.rmse_test = self.get_rmse_test(test_data)
+        print "\trmse:\n\t\ton training set:", self.rmse_training, "\n\t\ton test set:", self.rmse_test
+        self.baseline_error_dist = self.calculate_absolute_errors(test_data)
 
     # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
     def construct_A(self, matrix_R, users, movies):
@@ -80,10 +81,10 @@ class Predictor:
         training = m.sqrt(1.0 / self.ratings_number * training_sum)
         return np.around(training, decimals = 3)
 
-    def get_rmse_test(self, test_set, mode):
+    def get_rmse_test(self, test_set):
         test_sum = 0.0
         source = self.baseline_matrix
-        if mode == IMPROVED:
+        if self.mode == IMPROVED:
             pass
             # source = improved predictor's matrix
         for rating in test_set:
@@ -91,10 +92,10 @@ class Predictor:
         test = m.sqrt(1.0 / len(test_set) * test_sum)
         return np.around(test, decimals = 3)
 
-    def calculate_absolute_errors(self, mode, test_set):
+    def calculate_absolute_errors(self, test_set):
         source = self.baseline_matrix
-        filename = "abs_errors_" + mode + ".png"
-        if mode == IMPROVED:
+        filename = "abs_errors_" + self.mode + ".png"
+        if self.mode == IMPROVED:
             pass
             # source = improved predictor's matrix
         # plot a histogram
@@ -104,7 +105,7 @@ class Predictor:
         plt.bar(center, hist, align = "center", width = 0.7)
         plt.xlabel("Absolute error")
         plt.ylabel("Count")
-        plt.title("Histogram of the distribution of the absolute errors for " + mode + " predictor")
+        plt.title("Histogram of the distribution of the absolute errors for " + self.mode + " predictor")
         plt.grid(True)
         plt.savefig(filename)
         return [x for x in hist if x > 0]
