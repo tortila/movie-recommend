@@ -40,7 +40,6 @@ class Predictor:
         self.improved_matrix = self.get_improved_matrix(training_data)
         print "\t\t->\timproved matrix calculated"
         self.rmse_test_improved = self.get_rmse_test(test_data, self.improved_matrix)
-        print "rmse inside predictor:", self.rmse_test_improved
 
     # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
     def construct_a_matrix(self, matrix_R):
@@ -99,7 +98,6 @@ class Predictor:
         for rating in test_set:
             test_sum += (np.rint(source[rating[0] - 1, rating[1] - 1]) - rating[2]) ** 2
         test = m.sqrt(1.0 / len(test_set) * test_sum)
-        print "rmse inside rmse func:", test
         return np.around(test, decimals = 3)
 
     # to be called from main program
@@ -122,11 +120,11 @@ class Predictor:
         # calculate the difference for each cell
         for user in range(self.users):
             for movie in range(self.movies):
-                if training_data[user, movie] != 0:
+                if training_data[user, movie] > 0.0:
                     diff_matrix[user, movie] = training_data[user, movie] - self.baseline_matrix[user, movie]
         # make training points unavailable
-        for training_point in self.training_indices:
-            diff_matrix[training_point[0], training_point[1]] = NONE
+        # for training_point in self.training_indices:
+        #    diff_matrix[training_point[0], training_point[1]] = NONE
         np.savetxt("diff_mat.txt", diff_matrix, fmt="%1.4f")
         return diff_matrix
 

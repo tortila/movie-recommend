@@ -10,8 +10,6 @@ def main():
     print "-- Welcome to movie-recommend! --"
     # for output readability
     np.set_printoptions(formatter={'float_kind':'{:25f}'.format})
-    # for ignoring invalid float operations
-    # np.seterr(invalid="ignore")
     # baseline predictor by default
     mode = BASELINE
     if len(sys.argv) > 1:
@@ -24,7 +22,7 @@ def main():
         print "\tYou did not provide any arguments. Default:", mode, "predictor!"
     # read and parse text files
     parser = Parser(mode)
-    print "Parser initialized:", len(parser.test_set), "of test points and", np.count_nonzero(parser.training_matrix), "training points"
+    print "\tParser initialized:", len(parser.test_set), "of test points and", np.count_nonzero(parser.training_matrix), "training points"
     # initialize predictor and calculate rmse
     predictor = Predictor(mode, parser.training_matrix, parser.test_set)
     print "\trmse on test data (baseline):", predictor.rmse_test
