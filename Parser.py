@@ -20,8 +20,7 @@ class Parser:
         self.titles = self.moviename_parse(self.movies_file)
         self.training_matrix = self.get_umr_matrix(self.data_parse(self.data_file))
         self.test_set = self.data_parse(self.test_file)
-        print "Parser ready!"
-        print self.users_number, "users and", self.movies_number, "movies."
+        print "Parser: \t got", self.users_number, "users and", self.movies_number, "movies."
 
     # for *.data and *.test files (u, m, r)
     def data_parse(self, filename):
