@@ -3,10 +3,11 @@ import math as m
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as distance
 
-TRAINING_FRACTION = 0.05
+TRAINING_FRACTION = 0.5
 IMPROVED = "improved"
 BASELINE = "baseline"
-NONE = 100.0 # to distinguish unavailable data from 0 for improved predictor
+NONE = 100.0 # to distinguish unavailable data
+NEIGHBOURS_NUMBER = 2
 
 class Predictor:
 
@@ -32,16 +33,11 @@ class Predictor:
 
     def init_improved(self, training_data, test_data):
         self.init_baseline(training_data, test_data)
-        print "\t\t->\tbaseline initialized"
         self.difference_matrix = self.get_difference_matrix(training_data)
-        print "\t\t->\tdiff matrix calculated"
         self.distance_matrix = self.calculate_distance_matrix()
-        print "\t\t->\tdistance matrix calculated"
         self.improved_matrix = self.get_improved_matrix(training_data)
-        print "\t\t->\timproved matrix calculated"
         self.rmse_test_improved = self.get_rmse_test(test_data, self.improved_matrix)
 
-    # construct matrix A (N rows, M columns) where N is the number of training data points and M is number of (users + movies)
     def construct_a_matrix(self, matrix_R):
         # select training set of matrix R
         np.random.shuffle(self.training_indices)
@@ -74,7 +70,7 @@ class Predictor:
         for user in range(self.users):
             for movie in range(self.movies):
                 r_sum = self.r_avg + self.bias[user] + self.bias[user + movie]
-                # crop values - only for baseline predictor
+                # crop values
                 if self.mode == BASELINE:
                     if r_sum < 1.0:
                         r_sum = 1.0
@@ -116,66 +112,65 @@ class Predictor:
         return [x for x in hist if x > 0]
 
     def get_difference_matrix(self, training_data):
+        # fill with special values
         diff_matrix = np.full((self.users, self.movies), NONE)
         # calculate the difference for each cell
         for user in range(self.users):
             for movie in range(self.movies):
+                # if user rated the movie, calculate the difference between actual and predicted grade
                 if training_data[user, movie] > 0.0:
                     diff_matrix[user, movie] = training_data[user, movie] - self.baseline_matrix[user, movie]
-        # make training points unavailable
-        # for training_point in self.training_indices:
-        #    diff_matrix[training_point[0], training_point[1]] = NONE
-        np.savetxt("diff_mat.txt", diff_matrix, fmt="%1.4f")
         return diff_matrix
 
     def calculate_distance_matrix(self):
+        # fill with zeroes
         distance_matrix = np.zeros((self.movies, self.movies))
-        # iterate over top triangle of the matrix
         for movie in range(self.movies):
-            print "\t\t\tmovie:\t", movie
             distance_matrix[movie, movie] = 0.0
+            # iterate over top triangle of the matrix
             for candidate in range(movie + 1, self.movies):
                 movie_a = []
                 movie_b = []
                 for user in range(self.users):
+                    # append movies if user rated both of them
                     if self.difference_matrix[user, movie] != NONE and self.difference_matrix[user, candidate] != NONE:
                         movie_a.append(self.difference_matrix[user, movie])
                         movie_b.append(self.difference_matrix[user, candidate])
+                # calculate cosine coefficient distance or 0
                 distance_matrix[movie, candidate] = 1.0 - distance.cosine(movie_a, movie_b) if len(movie_a) > 0 else 0.0
                 # get bottom triangle by symmetry
                 distance_matrix[candidate, movie] = distance_matrix[movie, candidate]
-        np.savetxt("distance_mat.txt", distance_matrix, fmt="%1.4f")
         return distance_matrix
     
     def get_improved_matrix(self, training_data):
         improved_matrix = np.zeros((self.users, self.movies))
         for movie in range(self.movies):
-            n1, n2 = self.find_best_neighbours(movie)
+            # choose 2 closest neighbours, based on distance matrix
+            neighbours = self.find_best_neighbours(movie, NEIGHBOURS_NUMBER)
             for user in range(self.users):
-                similarity = self.get_similarity(training_data, user, movie, n1, n2)
+                similarity = self.get_similarity(training_data, user, movie, neighbours)
                 temp_val = self.baseline_matrix[user, movie] + similarity
+                # crop values
                 if temp_val < 1.0:
                     temp_val = 1.0
                 elif temp_val > 5.0:
                     temp_val = 5.0
                 improved_matrix[user, movie] = temp_val
-        np.savetxt("impr_mat.txt", improved_matrix, fmt="%1.4f")
         return improved_matrix
 
-    def find_best_neighbours(self, movie):
-        neighbours = np.argsort([abs(x) for x in self.distance_matrix[movie]])[::-1]
-        return neighbours[0], neighbours[1]
+    def find_best_neighbours(self, movie, k):
+        # returns indices of 2 closes neighbours
+        n = k / 2 if k >= self.movies else k
+        return np.argsort([abs(x) for x in self.distance_matrix[movie]])[::-1][:n]
 
-    def get_similarity(self, training_data, user, movie, n1, n2):
+    def get_similarity(self, training_data, user, movie, neighbours):
         sim_denominator = 0.0
         sim_numerator = 0.0
         similarity = 0.0
-        if training_data[user, n1] != 0:
-            sim_numerator += self.distance_matrix[movie, n1] * self.difference_matrix[user, n1]
-            sim_denominator += abs(self.distance_matrix[movie, n1])
-        if training_data[user, n2] != 0:
-            sim_numerator += self.distance_matrix[movie, n2] * self.difference_matrix[user, n2]
-            sim_denominator += abs(self.distance_matrix[movie, n2])
+        for neighbour in neighbours:
+            if training_data[user, neighbour] != 0:
+                sim_numerator += self.distance_matrix[movie, neighbour] * self.difference_matrix[user, neighbour]
+                sim_denominator += abs(self.distance_matrix[movie, neighbour])
         if sim_denominator != 0:
             similarity += sim_numerator / sim_denominator
         return similarity
