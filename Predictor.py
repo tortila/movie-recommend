@@ -30,6 +30,7 @@ class Predictor:
         self.baseline_matrix = self.get_baseline_matrix(training_data)
         self.rmse_training = self.get_rmse_training(training_data)
         self.rmse_test = self.get_rmse_test(test_data, self.baseline_matrix)
+        print "\t-> Baseline finished!"
 
     def init_improved(self, training_data, test_data):
         self.init_baseline(training_data, test_data)
@@ -69,7 +70,7 @@ class Predictor:
         r_baseline = np.zeros((self.users, self.movies))
         for user in range(self.users):
             for movie in range(self.movies):
-                r_sum = self.r_avg + self.bias[user] + self.bias[user + movie]
+                r_sum = self.r_avg + self.bias[user] + self.bias[movie + self.users]
                 # crop values
                 if self.mode == BASELINE:
                     if r_sum < 1.0:
