@@ -7,7 +7,7 @@ TRAINING_FRACTION = 0.5
 IMPROVED = "improved"
 BASELINE = "baseline"
 NONE = 100.0 # to distinguish unavailable data
-NEIGHBOURS_NUMBER = 20
+NEIGHBOURS_NUMBER = 2
 
 class Predictor:
 
@@ -118,7 +118,7 @@ class Predictor:
         for user in range(self.users):
             for movie in range(self.movies):
                 # if user rated the movie, calculate the difference between actual and predicted grade
-                if training_data[user, movie] != 0.0:
+                if training_data[user, movie] > 0.0:
                     diff_matrix[user, movie] = training_data[user, movie] - self.baseline_matrix[user, movie]
         return diff_matrix
 
@@ -137,21 +137,19 @@ class Predictor:
                         movie_a.append(self.difference_matrix[user, movie])
                         movie_b.append(self.difference_matrix[user, candidate])
                 # calculate cosine coefficient distance or 0
-                distance_matrix[movie, candidate] = 1.0 - distance.cosine(movie_a, movie_b) if len(movie_a) * len(movie_b) > 0 else 0.0
+                distance_matrix[movie, candidate] = 1.0 - distance.cosine(movie_a, movie_b) if len(movie_a) > 0 else 0.0
                 # get bottom triangle by symmetry
                 distance_matrix[candidate, movie] = distance_matrix[movie, candidate]
         return distance_matrix
     
     def get_improved_matrix(self, training_data):
         improved_matrix = np.zeros((self.users, self.movies))
-        sim = 0.0
         for movie in range(self.movies):
             # choose 2 closest neighbours, based on distance matrix
             neighbours = self.find_best_neighbours(movie, NEIGHBOURS_NUMBER)
             for user in range(self.users):
                 similarity = self.get_similarity(training_data, user, movie, neighbours)
-                temp_val = self.baseline_matrix[user, movie] + similarity / 10.0
-                sim += similarity
+                temp_val = self.baseline_matrix[user, movie] + similarity
                 # crop values
                 if temp_val < 1.0:
                     temp_val = 1.0
@@ -162,7 +160,7 @@ class Predictor:
 
     def find_best_neighbours(self, movie, k):
         # returns indices of 2 closes neighbours
-        n = self.movies - 1 if k >= self.movies else k
+        n = k / 2 if k >= self.movies else k
         return np.argsort([abs(x) for x in self.distance_matrix[movie]])[::-1][:n]
 
     def get_similarity(self, training_data, user, movie, neighbours):
@@ -174,5 +172,5 @@ class Predictor:
                 sim_numerator += self.distance_matrix[movie, neighbour] * self.difference_matrix[user, neighbour]
                 sim_denominator += abs(self.distance_matrix[movie, neighbour])
         if sim_denominator != 0:
-            similarity += sim_numerator * 1.0 / sim_denominator
+            similarity += sim_numerator / sim_denominator
         return similarity
