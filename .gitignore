@@ -21,7 +21,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-.idea/
+.idea/*
 *.xml
 
 # PyInstaller
@@ -58,3 +58,5 @@ target/
 # histogram
 *.png
 *.txt
+# backup
+*.py~
