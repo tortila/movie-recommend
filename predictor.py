@@ -1,5 +1,8 @@
 import numpy as np
 import math as m
+import matplotlib
+# a workaround to avoid depending on _tkinter package (the default "tk" backend is not used anyway)
+matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as distance
 

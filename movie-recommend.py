@@ -1,5 +1,5 @@
-from Parser import Parser
-from Predictor import Predictor
+from parser import Parser
+from predictor import Predictor
 import numpy as np
 import sys
 

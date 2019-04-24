@@ -2,7 +2,7 @@ import csv
 import numpy as np
 
 DIR = "data/"
-DATA = "data"
+DATA = "training"
 MOVIE_NAMES = "moviename"
 TEST = "test"
 BASELINE = "oligo854"
