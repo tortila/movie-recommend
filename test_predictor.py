@@ -24,7 +24,7 @@ def mock_parser_reading_files(mocker):
 
 
 @pytest.mark.parametrize("mode", ["baseline", "improved"])
-def test_rmse_calculated(mode, *_):
+def test_rmse_calculated(mode):
     parser = Parser(mode)
     predictor = Predictor(mode, parser.training_matrix, parser.test_set)
     assert predictor.rmse_test > 0.0
