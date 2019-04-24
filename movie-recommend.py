@@ -20,32 +20,38 @@ def main():
     if len(sys.argv) > 1:
         if sys.argv[1] == IMPROVED or sys.argv[1] == BASELINE:
             mode = sys.argv[1]
-            print("\tYou chose: %s predictor!", mode)
+            print("    You chose: {} predictor!".format(mode))
         else:
             print(
-                "\t %s is not a valid argument. Default: %s predictor!",
-                sys.argv[1],
-                mode,
+                "    {} is not a valid argument. Default: {} predictor!".format(
+                    sys.argv[1], mode
+                )
             )
     else:
-        print("\tYou did not provide any arguments. Default:"), mode, "predictor!"
+        print(
+            "    You did not provide any arguments. Default: {} predictor!".format(mode)
+        )
 
     # read and parse text files
     parser = Parser(mode)
-    print("\tParser initialized:")
+    print("    Parser initialized:")
     print(
-        "\t\t %d test points and %dtraining points",
-        len(parser.test_set),
-        np.count_nonzero(parser.training_matrix),
+        "        {} test points and {} training points".format(
+            len(parser.test_set), np.count_nonzero(parser.training_matrix)
+        )
     )
 
     # initialize predictor and calculate rmse
     predictor = Predictor(mode, parser.training_matrix, parser.test_set)
-    print("\trmse on test data (baseline): %s", predictor.rmse_test)
+    print("    rmse on test data (baseline): {}".format(predictor.rmse_test))
     if predictor.mode == BASELINE:
-        print("\trmse on training data (baseline): %s", predictor.rmse_training)
+        print(
+            "    rmse on training data (baseline): {}".format(predictor.rmse_training)
+        )
     else:
-        print("\trmse on test data (improved): %s", predictor.rmse_test_improved)
+        print(
+            "    rmse on test data (improved): {}".format(predictor.rmse_test_improved)
+        )
 
     # execute histogram plotting and get error distribution
     error_dist = (
@@ -55,7 +61,7 @@ def main():
             parser.test_set, predictor.baseline_matrix
         )
     )
-    print("\tHistogram saved to file. Error distribution: %s", error_dist)
+    print("    Histogram saved to file. Error distribution: {}".format(error_dist))
 
 
 if __name__ == "__main__":
