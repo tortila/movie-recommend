@@ -5,7 +5,7 @@ DIR = "data/"
 DATA = "training"
 MOVIE_NAMES = "moviename"
 TEST = "test"
-BASELINE = "oligo854"
+BASELINE = "baseline"
 IMPROVED = "improved"
 
 
@@ -21,7 +21,7 @@ class Parser:
         self.training_matrix = self.get_umr_matrix(self.data_parse(self.data_file))
         self.test_set = self.data_parse(self.test_file)
 
-    # for *.data and *.test files (u, m, r)
+    # for *.training and *.test files (u, m, r)
     def data_parse(self, filename):
         data = []
         with open(filename, "rb") as csv_file:

@@ -31,7 +31,7 @@ class Predictor:
         self.training_indices = np.transpose(np.nonzero(training_data))
         self.matrix_A, self.vector_y = self.construct_a_matrix(training_data)
         self.bias = self.get_bias(self.matrix_A, self.vector_y)[0]
-        self.baseline_matrix = self.get_baseline_matrix(training_data)
+        self.baseline_matrix = self.get_baseline_matrix()
         self.rmse_training = self.get_rmse_training(training_data)
         self.rmse_test = self.get_rmse_test(test_data, self.baseline_matrix)
 
@@ -69,7 +69,7 @@ class Predictor:
     def get_training_size(self):
         return int(self.ratings_number * TRAINING_FRACTION)
 
-    def get_baseline_matrix(self, umr):
+    def get_baseline_matrix(self):
         r_baseline = np.zeros((self.users, self.movies))
         for user in range(self.users):
             for movie in range(self.movies):
