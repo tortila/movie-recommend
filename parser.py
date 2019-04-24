@@ -8,8 +8,8 @@ TEST = "test"
 BASELINE = "oligo854"
 IMPROVED = "improved"
 
-class Parser:
 
+class Parser:
     def __init__(self, mode):
         self.users_number = 0
         self.movies_number = 0

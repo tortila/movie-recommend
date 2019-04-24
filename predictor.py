@@ -1,6 +1,7 @@
 import numpy as np
 import math as m
 import matplotlib
+
 # a workaround to avoid depending on _tkinter package (the default "tk" backend is not used anyway)
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -9,11 +10,11 @@ import scipy.spatial.distance as distance
 TRAINING_FRACTION = 0.5
 IMPROVED = "improved"
 BASELINE = "baseline"
-NONE = 100.0 # to distinguish unavailable data
+NONE = 100.0  # to distinguish unavailable data
 NEIGHBOURS_NUMBER = 20
 
-class Predictor:
 
+class Predictor:
     def __init__(self, mode, training_data, test_data):
         self.mode = mode
         if self.mode == BASELINE:
@@ -44,7 +45,7 @@ class Predictor:
     def construct_a_matrix(self, matrix_R):
         # select training set of matrix R
         np.random.shuffle(self.training_indices)
-        self.training_indices = self.training_indices[:self.training_size]
+        self.training_indices = self.training_indices[: self.training_size]
         # calculate average rating of training set
         sum = 0
         for row in self.training_indices:
@@ -88,28 +89,38 @@ class Predictor:
         for user in range(self.users):
             for movie in range(self.movies):
                 if training_set[user, movie] != 0:
-                    training_sum += (np.rint(self.baseline_matrix[user, movie]) - training_set[user, movie]) ** 2
+                    training_sum += (
+                        np.rint(self.baseline_matrix[user, movie])
+                        - training_set[user, movie]
+                    ) ** 2
         training = m.sqrt(1.0 / self.ratings_number * training_sum)
-        return np.around(training, decimals = 3)
+        return np.around(training, decimals=3)
 
     def get_rmse_test(self, test_set, source):
         test_sum = 0.0
         for rating in test_set:
             test_sum += (np.rint(source[rating[0] - 1, rating[1] - 1]) - rating[2]) ** 2
         test = m.sqrt(1.0 / len(test_set) * test_sum)
-        return np.around(test, decimals = 3)
+        return np.around(test, decimals=3)
 
     # to be called from main program
     def calculate_absolute_errors(self, test_set, source):
         filename = "abs_errors_" + self.mode + ".png"
         # plot a histogram
-        hist_data = [(abs(test_set[i][2] - source[test_set[i][0] - 1, test_set[i][1] - 1])) for i in range(len(test_set))]
-        hist, bins = np.histogram(hist_data, bins = range(10))
+        hist_data = [
+            (abs(test_set[i][2] - source[test_set[i][0] - 1, test_set[i][1] - 1]))
+            for i in range(len(test_set))
+        ]
+        hist, bins = np.histogram(hist_data, bins=range(10))
         center = (bins[:-1] + bins[1:]) / 2
-        plt.bar(center, hist, align = "center", width = 0.7)
+        plt.bar(center, hist, align="center", width=0.7)
         plt.xlabel("Absolute error")
         plt.ylabel("Count")
-        plt.title("Histogram of the distribution of the absolute errors for " + self.mode + " predictor\n")
+        plt.title(
+            "Histogram of the distribution of the absolute errors for "
+            + self.mode
+            + " predictor\n"
+        )
         plt.grid(True)
         plt.savefig(filename)
         return [x for x in hist if x > 0]
@@ -122,7 +133,9 @@ class Predictor:
             for movie in range(self.movies):
                 # if user rated the movie, calculate the difference between actual and predicted grade
                 if training_data[user, movie] != 0.0:
-                    diff_matrix[user, movie] = training_data[user, movie] - self.baseline_matrix[user, movie]
+                    diff_matrix[user, movie] = (
+                        training_data[user, movie] - self.baseline_matrix[user, movie]
+                    )
         return diff_matrix
 
     def calculate_distance_matrix(self):
@@ -136,15 +149,22 @@ class Predictor:
                 movie_b = []
                 for user in range(self.users):
                     # append movies if user rated both of them
-                    if self.difference_matrix[user, movie] != NONE and self.difference_matrix[user, candidate] != NONE:
+                    if (
+                        self.difference_matrix[user, movie] != NONE
+                        and self.difference_matrix[user, candidate] != NONE
+                    ):
                         movie_a.append(self.difference_matrix[user, movie])
                         movie_b.append(self.difference_matrix[user, candidate])
                 # calculate cosine coefficient distance or 0
-                distance_matrix[movie, candidate] = 1.0 - distance.cosine(movie_a, movie_b) if len(movie_a) * len(movie_b) > 0 else 0.0
+                distance_matrix[movie, candidate] = (
+                    1.0 - distance.cosine(movie_a, movie_b)
+                    if len(movie_a) * len(movie_b) > 0
+                    else 0.0
+                )
                 # get bottom triangle by symmetry
                 distance_matrix[candidate, movie] = distance_matrix[movie, candidate]
         return distance_matrix
-    
+
     def get_improved_matrix(self, training_data):
         improved_matrix = np.zeros((self.users, self.movies))
         sim = 0.0
@@ -174,7 +194,10 @@ class Predictor:
         similarity = 0.0
         for neighbour in neighbours:
             if training_data[user, neighbour] != 0:
-                sim_numerator += self.distance_matrix[movie, neighbour] * self.difference_matrix[user, neighbour]
+                sim_numerator += (
+                    self.distance_matrix[movie, neighbour]
+                    * self.difference_matrix[user, neighbour]
+                )
                 sim_denominator += abs(self.distance_matrix[movie, neighbour])
         if sim_denominator != 0:
             similarity += sim_numerator * 1.0 / sim_denominator
