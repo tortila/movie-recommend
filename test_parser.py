@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from hypothesis import given, strategies as st
 from hypothesis_csv.strategies import csv as csv_st
@@ -27,4 +28,11 @@ def fake_data(csv_training, csv_test, mocker, tmp_path):
 @pytest.mark.parametrize("mode", [Mode.BASELINE, Mode.IMPROVED])
 def test_parses_test_data(mode, fake_data):
     p = Parser.from_mode(mode)
-    assert len(p.test_set) >= 5
+    assert len(p.test_set) > 0, "number of test points should be greater than 0"
+
+
+@pytest.mark.parametrize("mode", [Mode.BASELINE, Mode.IMPROVED])
+def test_parses_training_data(mode, fake_data):
+    p = Parser.from_mode(mode)
+    data = p.training_matrix
+    assert np.count_nonzero(data), "number of training points should be greater than 0"
