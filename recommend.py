@@ -1,10 +1,7 @@
-from parser import Parser
+from parser import Parser, Mode
 from predictor import Predictor
 import numpy as np
 import sys
-
-BASELINE = "baseline"
-IMPROVED = "improved"
 
 
 def main():
@@ -14,11 +11,11 @@ def main():
     np.set_printoptions(formatter={"float_kind": "{:25f}".format})
 
     # baseline predictor by default
-    mode = BASELINE
+    mode = Mode.BASELINE
 
     # read command-line argument, if provided
     if len(sys.argv) > 1:
-        if sys.argv[1] == IMPROVED or sys.argv[1] == BASELINE:
+        if sys.argv[1] == Mode.IMPROVED or sys.argv[1] == Mode.BASELINE:
             mode = sys.argv[1]
             print("    You chose: {} predictor!".format(mode))
         else:
@@ -44,7 +41,7 @@ def main():
     # initialize predictor and calculate rmse
     predictor = Predictor(mode, parser.training_matrix, parser.test_set)
     print("    rmse on test data (baseline): {}".format(predictor.rmse_test))
-    if predictor.mode == BASELINE:
+    if predictor.mode == Mode.BASELINE:
         print(
             "    rmse on training data (baseline): {}".format(predictor.rmse_training)
         )
@@ -56,7 +53,7 @@ def main():
     # execute histogram plotting and get error distribution
     error_dist = (
         predictor.calculate_absolute_errors(parser.test_set, predictor.improved_matrix)
-        if predictor.mode == IMPROVED
+        if predictor.mode == Mode.IMPROVED
         else predictor.calculate_absolute_errors(
             parser.test_set, predictor.baseline_matrix
         )

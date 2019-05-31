@@ -19,8 +19,8 @@ movie_titles = [
 
 @pytest.fixture(autouse=True)
 def mock_parser_reading_files(mocker):
-    mocker.patch("parser.Parser.data_parse", return_value=test_data)
-    mocker.patch("parser.Parser.moviename_parse", return_value=movie_titles)
+    mocker.patch("parser._data_parse", return_value=test_data)
+    mocker.patch("parser._moviename_parse", return_value=movie_titles)
 
 
 @pytest.mark.parametrize("mode", ["baseline", "improved"])

@@ -1,48 +1,70 @@
 import csv
+from enum import Enum
+from typing import NamedTuple
+
 import numpy as np
 
 DIR = "data/"
 DATA = "training"
 MOVIE_NAMES = "moviename"
 TEST = "test"
-BASELINE = "baseline"
-IMPROVED = "improved"
 
 
-class Parser:
-    def __init__(self, mode):
-        file_mode = IMPROVED if mode == IMPROVED else BASELINE
-        self.movies_file = DIR + file_mode + "." + MOVIE_NAMES
-        self.data_file = DIR + file_mode + "." + DATA
-        self.test_file = DIR + file_mode + "." + TEST
-        self.titles = self.moviename_parse(self.movies_file)
-        self.training_matrix = self.get_umr_matrix(self.data_parse(self.data_file))
-        self.test_set = self.data_parse(self.test_file)
+class Mode(Enum):
+    BASELINE = "baseline"
+    IMPROVED = "improved"
 
-    # for *.training and *.test files (u, m, r)
-    def data_parse(self, filename):
-        data = []
-        with open(filename, "r") as csv_file:
-            f_reader = csv.reader(csv_file, delimiter=",")
-            for row in f_reader:
-                data.append([int(row[0]), int(row[1]), int(row[2])])
-        csv_file.close()
-        return data
 
-    def get_umr_matrix(self, raw_data):
+class Parser(NamedTuple):
+    file_mode: str
+
+    @classmethod
+    def from_mode(cls, mode: Mode) -> "Parser":
+        return Parser(file_mode=mode.value)
+
+    @property
+    def training_matrix(self):
+        return self._build_umr_matrix(_data_parse(f"{DIR}/{self.file_mode}.{DATA}"))
+
+    @property
+    def test_set(self):
+        return _data_parse(f"{DIR}/{self.file_mode}.{TEST}")
+
+    def _build_umr_matrix(self, raw_data):
         users_number = max(map(lambda x: x[0], raw_data))
-        movies_number = len(self.titles)
+        titles = _moviename_parse(f"{DIR}/{self.file_mode}.{MOVIE_NAMES}")
+        movies_number = len(titles)
         matrix = np.zeros((users_number, movies_number))
         for row in raw_data:
             matrix[row[0] - 1, row[1] - 1] = row[2]
         return matrix
 
-    # for *.moviename files (m, title)
-    def moviename_parse(self, filename):
-        data = []
-        with open(filename, "r") as csv_file:
-            f_reader = csv.reader(csv_file, delimiter=";")
-            for row in f_reader:
-                data.append(row[1])
-        csv_file.close()
-        return data
+
+def _moviename_parse(filename):
+    """
+    Method for parsing *.moviename files (m, title)
+    :param filename: name of the file to parse
+    :return: flat list of movie titles
+    """
+    data = []
+    with open(filename, "r") as csv_file:
+        f_reader = csv.reader(csv_file, delimiter=";")
+        for row in f_reader:
+            data.append(row[1])
+    csv_file.close()
+    return data
+
+
+def _data_parse(filename):
+    """
+    Method for parsing *.training and *.test files (u, m, r)
+    :param filename: name of the file to parse
+    :return: list of lists [u, m, r]
+    """
+    data = []
+    with open(filename, "r") as csv_file:
+        f_reader = csv.reader(csv_file, delimiter=",")
+        for row in f_reader:
+            data.append([int(row[0]), int(row[1]), int(row[2])])
+    csv_file.close()
+    return data
