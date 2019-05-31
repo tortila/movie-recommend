@@ -5,9 +5,10 @@ import sys
 import logging
 
 logging.basicConfig(
-    format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
+    format="%(asctime)s %(module)s %(levelname)-8s %(message)s",
     level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S')
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def main():
@@ -26,8 +27,7 @@ def main():
             logging.info("You chose: %s predictor!", mode)
         else:
             logging.warning(
-                "%s is not a valid argument. Default: %s predictor!",
-                    sys.argv[1], mode
+                "%s is not a valid argument. Default: %s predictor!", sys.argv[1], mode
             )
     else:
         logging.warning(
@@ -39,20 +39,18 @@ def main():
     training_matrix = parser.training_matrix
     test_matrix = parser.test_set
     logging.info(
-        "Parser initialized with: %d test points, %d training points", len(test_matrix), np.count_nonzero(training_matrix)
+        "Parser initialized with: %d test points, %d training points",
+        len(test_matrix),
+        np.count_nonzero(training_matrix),
     )
 
     # initialize predictor and calculate rmse
     predictor = Predictor(mode, training_matrix, test_matrix)
     logging.info("rmse on test data (baseline): %f", predictor.rmse_test)
     if predictor.mode == Mode.BASELINE:
-        logging.info(
-            "rmse on training data (baseline): %f", predictor.rmse_training
-        )
+        logging.info("rmse on training data (baseline): %f", predictor.rmse_training)
     else:
-        logging.info(
-            "rmse on test data (improved): %f", predictor.rmse_test_improved
-        )
+        logging.info("rmse on test data (improved): %f", predictor.rmse_test_improved)
 
     # execute histogram plotting and get error distribution
     error_dist = (
