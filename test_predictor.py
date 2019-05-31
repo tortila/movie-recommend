@@ -1,6 +1,6 @@
 import pytest
 
-from parser import Parser
+from parser import Parser, Mode
 from predictor import Predictor
 
 test_data = [
@@ -23,9 +23,9 @@ def mock_parser_reading_files(mocker):
     mocker.patch("parser._moviename_parse", return_value=movie_titles)
 
 
-@pytest.mark.parametrize("mode", ["baseline", "improved"])
+@pytest.mark.parametrize("mode", [Mode.BASELINE, Mode.IMPROVED])
 def test_rmse_calculated(mode):
-    parser = Parser(mode)
+    parser = Parser.from_mode(mode)
     predictor = Predictor(mode, parser.training_matrix, parser.test_set)
     assert predictor.rmse_test > 0.0
     assert predictor.rmse_training > 0.0

@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-DIR = "data/"
+DIR = "data"
 DATA = "training"
 MOVIE_NAMES = "moviename"
 TEST = "test"

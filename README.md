@@ -34,5 +34,5 @@ pipenv install
 ```
 #### Run
 ```bash
-pipenv run python movie-recommend.py {baseline|improved}
+pipenv run python recommend.py {baseline|improved}
 ```

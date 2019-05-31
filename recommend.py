@@ -2,10 +2,16 @@ from parser import Parser, Mode
 from predictor import Predictor
 import numpy as np
 import sys
+import logging
+
+logging.basicConfig(
+    format='%(asctime)s %(module)s %(levelname)-8s %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def main():
-    print("-- Welcome to movie-recommend! --")
+    logging.info("-- Welcome to movie-recommend! --")
 
     # for output readability
     np.set_printoptions(formatter={"float_kind": "{:25f}".format})
@@ -17,37 +23,35 @@ def main():
     if len(sys.argv) > 1:
         if sys.argv[1] == Mode.IMPROVED or sys.argv[1] == Mode.BASELINE:
             mode = sys.argv[1]
-            print("    You chose: {} predictor!".format(mode))
+            logging.info("You chose: %s predictor!", mode)
         else:
-            print(
-                "    {} is not a valid argument. Default: {} predictor!".format(
+            logging.warning(
+                "%s is not a valid argument. Default: %s predictor!",
                     sys.argv[1], mode
-                )
             )
     else:
-        print(
-            "    You did not provide any arguments. Default: {} predictor!".format(mode)
+        logging.warning(
+            "You did not provide any arguments. Default: %s predictor!", mode
         )
 
     # read and parse text files
-    parser = Parser(mode)
-    print("    Parser initialized:")
-    print(
-        "        {} test points and {} training points".format(
-            len(parser.test_set), np.count_nonzero(parser.training_matrix)
-        )
+    parser = Parser.from_mode(mode)
+    training_matrix = parser.training_matrix
+    test_matrix = parser.test_set
+    logging.info(
+        "Parser initialized with: %d test points, %d training points", len(test_matrix), np.count_nonzero(training_matrix)
     )
 
     # initialize predictor and calculate rmse
-    predictor = Predictor(mode, parser.training_matrix, parser.test_set)
-    print("    rmse on test data (baseline): {}".format(predictor.rmse_test))
+    predictor = Predictor(mode, training_matrix, test_matrix)
+    logging.info("rmse on test data (baseline): %f", predictor.rmse_test)
     if predictor.mode == Mode.BASELINE:
-        print(
-            "    rmse on training data (baseline): {}".format(predictor.rmse_training)
+        logging.info(
+            "rmse on training data (baseline): %f", predictor.rmse_training
         )
     else:
-        print(
-            "    rmse on test data (improved): {}".format(predictor.rmse_test_improved)
+        logging.info(
+            "rmse on test data (improved): %f", predictor.rmse_test_improved
         )
 
     # execute histogram plotting and get error distribution
@@ -58,7 +62,7 @@ def main():
             parser.test_set, predictor.baseline_matrix
         )
     )
-    print("    Histogram saved to file. Error distribution: {}".format(error_dist))
+    logging.info("Histogram saved to file. Error distribution: %s", error_dist)
 
 
 if __name__ == "__main__":
