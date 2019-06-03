@@ -60,3 +60,12 @@ target/
 *.txt
 # backup
 *.py~
+
+# pyenv
+.python-version
+
+# data files
+data/
+
+# Hypothesis
+.hypothesis/

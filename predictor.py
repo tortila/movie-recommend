@@ -3,6 +3,8 @@ import math as m
 import matplotlib
 
 # a workaround to avoid depending on _tkinter package (the default "tk" backend is not used anyway)
+from parser import Mode
+
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as distance
@@ -15,11 +17,11 @@ NEIGHBOURS_NUMBER = 20
 
 
 class Predictor:
-    def __init__(self, mode, training_data, test_data):
+    def __init__(self, mode: Mode, training_data, test_data):
         self.mode = mode
-        if self.mode == BASELINE:
+        if self.mode == Mode.BASELINE:
             self.init_baseline(training_data, test_data)
-        elif self.mode == IMPROVED:
+        elif self.mode == Mode.IMPROVED:
             self.init_improved(training_data, test_data)
 
     def init_baseline(self, training_data, test_data):
@@ -75,7 +77,7 @@ class Predictor:
             for movie in range(self.movies):
                 r_sum = self.r_avg + self.bias[user] + self.bias[movie + self.users]
                 # crop values
-                if self.mode == BASELINE:
+                if self.mode == Mode.BASELINE:
                     if r_sum < 1.0:
                         r_sum = 1.0
                     if r_sum > 5.0:
@@ -105,7 +107,7 @@ class Predictor:
 
     # to be called from main program
     def calculate_absolute_errors(self, test_set, source):
-        filename = "abs_errors_" + self.mode + ".png"
+        filename = "abs_errors_" + self.mode.value + ".png"
         # plot a histogram
         hist_data = [
             (abs(test_set[i][2] - source[test_set[i][0] - 1, test_set[i][1] - 1]))
@@ -118,7 +120,7 @@ class Predictor:
         plt.ylabel("Count")
         plt.title(
             "Histogram of the distribution of the absolute errors for "
-            + self.mode
+            + self.mode.value
             + " predictor\n"
         )
         plt.grid(True)
