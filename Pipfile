@@ -8,7 +8,6 @@ pytest = "*"
 pytest-mock = "*"
 hypothesis = "*"
 hypothesis-csv = "*"
-multimethod = "*"
 
 [packages]
 numpy = "*"
