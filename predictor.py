@@ -1,9 +1,10 @@
+from enum import Enum
+
 import numpy as np
 import math as m
 import matplotlib
 
 # a workaround to avoid depending on _tkinter package (the default "tk" backend is not used anyway)
-from parser import Mode
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -14,6 +15,11 @@ IMPROVED = "improved"
 BASELINE = "baseline"
 NONE = 100.0  # to distinguish unavailable data
 NEIGHBOURS_NUMBER = 20
+
+
+class Mode(Enum):
+    BASELINE = "baseline"
+    IMPROVED = "improved"
 
 
 class Predictor:
@@ -69,7 +75,8 @@ class Predictor:
         return np.linalg.lstsq(A, y, rcond=1e-3)
 
     def get_training_size(self):
-        return int(self.ratings_number * TRAINING_FRACTION)
+        actual_size = int(self.ratings_number * TRAINING_FRACTION)
+        return actual_size if actual_size > 0 else 1
 
     def get_baseline_matrix(self):
         r_baseline = np.zeros((self.users, self.movies))
