@@ -1,17 +1,10 @@
-import numpy as np
 import pytest
 
-from parser import Parser, Mode
+from dataset import Dataset
+from predictor import Mode
 
 
 @pytest.mark.parametrize("mode", [Mode.BASELINE, Mode.IMPROVED])
-def test_parses_test_data(mode, mock_csv_files):
-    p = Parser.from_mode(mode)
-    assert len(p.test_set) > 0, "number of test points should be greater than 0"
-
-
-@pytest.mark.parametrize("mode", [Mode.BASELINE, Mode.IMPROVED])
-def test_parses_training_data(mode, mock_csv_files):
-    p = Parser.from_mode(mode)
-    data = p.training_matrix
-    assert np.count_nonzero(data), "number of training points should be greater than 0"
+def test_parses_test_data(mode, get_mocked_csv_path):
+    d = Dataset.from_file(get_mocked_csv_path)
+    assert len(d.records) > 0, "number of test points should be greater than 0"
