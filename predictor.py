@@ -2,17 +2,9 @@ from enum import Enum
 
 import numpy as np
 import math as m
-import matplotlib
-
-# a workaround to avoid depending on _tkinter package (the default "tk" backend is not used anyway)
-
-matplotlib.use("agg")
-import matplotlib.pyplot as plt
 import scipy.spatial.distance as distance
 
 TRAINING_FRACTION = 0.5
-IMPROVED = "improved"
-BASELINE = "baseline"
 NONE = 100.0  # to distinguish unavailable data
 NEIGHBOURS_NUMBER = 20
 
@@ -23,14 +15,18 @@ class Mode(Enum):
 
 
 class Predictor:
-    def __init__(self, mode: Mode, training_data, test_data):
-        self.mode = mode
-        if self.mode == Mode.BASELINE:
-            self.init_baseline(training_data, test_data)
-        elif self.mode == Mode.IMPROVED:
-            self.init_improved(training_data, test_data)
+    @classmethod
+    def from_mode(cls, mode: Mode):
+        if mode == mode.BASELINE:
+            return BaselinePredictor
+        elif mode == mode.IMPROVED:
+            return ImprovedPredictor
+        else:
+            raise ValueError("Can't initialize a predictor with mode: %s", mode.value)
 
-    def init_baseline(self, training_data, test_data):
+
+class BaselinePredictor:
+    def __init__(self, training_data, test_data):
         self.r_avg = 0.0
         self.users = training_data.shape[0]
         self.movies = training_data.shape[1]
@@ -43,12 +39,9 @@ class Predictor:
         self.rmse_training = self.get_rmse_training(training_data)
         self.rmse_test = self.get_rmse_test(test_data, self.baseline_matrix)
 
-    def init_improved(self, training_data, test_data):
-        self.init_baseline(training_data, test_data)
-        self.difference_matrix = self.get_difference_matrix(training_data)
-        self.distance_matrix = self.calculate_distance_matrix()
-        self.improved_matrix = self.get_improved_matrix(training_data)
-        self.rmse_test_improved = self.get_rmse_test(test_data, self.improved_matrix)
+    @classmethod
+    def build(cls, training_data, test_data):
+        return cls(training_data, test_data)
 
     def construct_a_matrix(self, matrix_R):
         # select training set of matrix R
@@ -83,14 +76,12 @@ class Predictor:
         for user in range(self.users):
             for movie in range(self.movies):
                 r_sum = self.r_avg + self.bias[user] + self.bias[movie + self.users]
-                # crop values
-                if self.mode == Mode.BASELINE:
-                    if r_sum < 1.0:
-                        r_sum = 1.0
-                    if r_sum > 5.0:
-                        r_sum = 5.0
+                # round to the nearest integer <1, 5>
+                if r_sum < 1.0:
+                    r_sum = 1.0
+                if r_sum > 5.0:
+                    r_sum = 5.0
                 r_baseline[user, movie] = r_sum
-        # round to the nearest integer
         return r_baseline
 
     def get_rmse_training(self, training_set):
@@ -112,27 +103,23 @@ class Predictor:
         test = m.sqrt(1.0 / len(test_set) * test_sum)
         return np.around(test, decimals=3)
 
-    # to be called from main program
-    def calculate_absolute_errors(self, test_set, source):
-        filename = "abs_errors_" + self.mode.value + ".png"
-        # plot a histogram
-        hist_data = [
-            (abs(test_set[i][2] - source[test_set[i][0] - 1, test_set[i][1] - 1]))
-            for i in range(len(test_set))
-        ]
-        hist, bins = np.histogram(hist_data, bins=range(10))
-        center = (bins[:-1] + bins[1:]) / 2
-        plt.bar(center, hist, align="center", width=0.7)
-        plt.xlabel("Absolute error")
-        plt.ylabel("Count")
-        plt.title(
-            "Histogram of the distribution of the absolute errors for "
-            + self.mode.value
-            + " predictor\n"
-        )
-        plt.grid(True)
-        plt.savefig(filename)
-        return [x for x in hist if x > 0]
+
+class ImprovedPredictor(BaselinePredictor):
+    def __init__(self, training_data, test_data):
+        super().__init__(training_data, test_data)
+        self.difference_matrix = self.get_difference_matrix(training_data)
+        self.distance_matrix = self.calculate_distance_matrix()
+        self.improved_matrix = self.get_improved_matrix(training_data)
+        self.rmse_test_improved = self.get_rmse_test(test_data, self.improved_matrix)
+
+    # overrides the method from the super class
+    def get_baseline_matrix(self):
+        r_baseline = np.zeros((self.users, self.movies))
+        for user in range(self.users):
+            for movie in range(self.movies):
+                r_sum = self.r_avg + self.bias[user] + self.bias[movie + self.users]
+                r_baseline[user, movie] = r_sum
+        return r_baseline
 
     def get_difference_matrix(self, training_data):
         # fill with special values
@@ -146,6 +133,26 @@ class Predictor:
                         training_data[user, movie] - self.baseline_matrix[user, movie]
                     )
         return diff_matrix
+
+    def get_similarity(self, training_data, user, movie, neighbours):
+        sim_denominator = 0.0
+        sim_numerator = 0.0
+        similarity = 0.0
+        for neighbour in neighbours:
+            if training_data[user, neighbour] != 0:
+                sim_numerator += (
+                    self.distance_matrix[movie, neighbour]
+                    * self.difference_matrix[user, neighbour]
+                )
+                sim_denominator += abs(self.distance_matrix[movie, neighbour])
+        if sim_denominator != 0:
+            similarity += sim_numerator * 1.0 / sim_denominator
+        return similarity
+
+    def find_best_neighbours(self, movie, k):
+        # returns indices of 2 closes neighbours
+        n = self.movies - 1 if k >= self.movies else k
+        return np.argsort([abs(x) for x in self.distance_matrix[movie]])[::-1][:n]
 
     def calculate_distance_matrix(self):
         # fill with zeroes
@@ -191,23 +198,3 @@ class Predictor:
                     temp_val = 5.0
                 improved_matrix[user, movie] = temp_val
         return improved_matrix
-
-    def find_best_neighbours(self, movie, k):
-        # returns indices of 2 closes neighbours
-        n = self.movies - 1 if k >= self.movies else k
-        return np.argsort([abs(x) for x in self.distance_matrix[movie]])[::-1][:n]
-
-    def get_similarity(self, training_data, user, movie, neighbours):
-        sim_denominator = 0.0
-        sim_numerator = 0.0
-        similarity = 0.0
-        for neighbour in neighbours:
-            if training_data[user, neighbour] != 0:
-                sim_numerator += (
-                    self.distance_matrix[movie, neighbour]
-                    * self.difference_matrix[user, neighbour]
-                )
-                sim_denominator += abs(self.distance_matrix[movie, neighbour])
-        if sim_denominator != 0:
-            similarity += sim_numerator * 1.0 / sim_denominator
-        return similarity

@@ -1,16 +1,45 @@
 from pathlib import Path
 
 from dataset import Dataset
-from predictor import Predictor, Mode
+from predictor import BaselinePredictor, ImprovedPredictor, Mode
 import numpy as np
 import sys
 import logging
+
+import matplotlib
+
+# a workaround to avoid depending on _tkinter package (the default "tk" backend is not used anyway)
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
 
 logging.basicConfig(
     format="%(asctime)s %(module)s %(levelname)-8s %(message)s",
     level=logging.INFO,
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+
+# to be called from main program
+def calculate_absolute_errors(test_set, source, mode):
+    filename = f"abs_errors_{mode.value}.png"
+    # plot a histogram
+    hist_data = [
+        (abs(test_set[i][2] - source[test_set[i][0] - 1, test_set[i][1] - 1]))
+        for i in range(len(test_set))
+    ]
+    hist, bins = np.histogram(hist_data, bins=range(10))
+    center = (bins[:-1] + bins[1:]) / 2
+    plt.bar(center, hist, align="center", width=0.7)
+    plt.xlabel("Absolute error")
+    plt.ylabel("Count")
+    plt.title(
+        "Histogram of the distribution of the absolute errors for "
+        + mode.value
+        + " predictor\n"
+    )
+    plt.grid(True)
+    plt.savefig(filename)
+    return [x for x in hist if x > 0]
 
 
 def main():
@@ -49,22 +78,20 @@ def main():
         np.count_nonzero(training_matrix),
     )
 
-    # initialize predictor and calculate rmse
-    predictor = Predictor(mode, training_matrix, test_records)
-    logging.info("rmse on test data (baseline): %f", predictor.rmse_test)
-    if predictor.mode == Mode.BASELINE:
+    if mode == Mode.BASELINE:
+        predictor = BaselinePredictor(training_matrix, test_records)
         logging.info("rmse on training data (baseline): %f", predictor.rmse_training)
-    else:
-        logging.info("rmse on test data (improved): %f", predictor.rmse_test_improved)
-
-    # execute histogram plotting and get error distribution
-    error_dist = (
-        predictor.calculate_absolute_errors(test_records, predictor.improved_matrix)
-        if predictor.mode == Mode.IMPROVED
-        else predictor.calculate_absolute_errors(
-            test_records, predictor.baseline_matrix
+        error_dist = calculate_absolute_errors(
+            test_records, predictor.baseline_matrix, mode
         )
-    )
+    elif mode == Mode.IMPROVED:
+        predictor = ImprovedPredictor(training_matrix, test_records)
+        logging.info("rmse on test data (improved): %f", predictor.rmse_test_improved)
+        error_dist = calculate_absolute_errors(
+            test_records, predictor.improved_matrix, mode
+        )
+
+    logging.info("RMSE on test data (baseline): %f", predictor.rmse_test)
     logging.info("Histogram saved to file. Error distribution: %s", error_dist)
 
 

@@ -27,7 +27,9 @@ def get_mocked_csv_path(tmp_path):
 @fixture
 @given(
     test_data=st.lists(
-        st.tuples(integers_strategy, integers_strategy, integers_strategy)
+        st.tuples(integers_strategy, integers_strategy, integers_strategy),
+        min_size=10,
+        max_size=15,
     )
 )
 def mock_reading_dataset_from_files(mocker, test_data):
